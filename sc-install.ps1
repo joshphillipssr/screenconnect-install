@@ -2,6 +2,7 @@
 $installerUrl = "https://joshphillipssr.screenconnect.com/Bin/ScreenConnect.ClientSetup.msi?e=Access&y=Guest&c=Goodyear%20AZ"
 $tempPath = "$env:TEMP\ScreenConnect.ClientSetup.msi"
 $logPath = "C:\Windows\Temp\ScreenConnect_Install_Log.txt"
+$serviceName = "ScreenConnect Client*"
 
 # Logging Function
 function Log {
@@ -10,6 +11,13 @@ function Log {
     $logMessage = "$timestamp - $Message"
     Write-Host $logMessage
     $logMessage | Out-File -Append -FilePath $logPath
+}
+
+# Check if ScreenConnect is already installed
+Log "Checking if ScreenConnect is already installed..."
+if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+    Log "ScreenConnect is already installed. Skipping installation."
+    exit 0
 }
 
 # Download the installer
