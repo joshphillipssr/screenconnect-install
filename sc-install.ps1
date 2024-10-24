@@ -28,7 +28,9 @@ if ($service) {
         -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*ScreenConnect*" } | 
         Select-Object -ExpandProperty UninstallString -First 1)
 
-    if ($uninstallString) {
+    if ([string]::IsNullOrEmpty($uninstallString)) {
+        Log "ERROR: Could not find the uninstaller in the registry."
+    } else {
         Log "Found uninstall string: $uninstallString"
 
         # Check if the uninstall string needs reformatting
@@ -47,8 +49,6 @@ if ($service) {
             Log "ERROR: Failed to uninstall ScreenConnect. Exception: $_"
             exit 1
         }
-    } else {
-        Log "ERROR: Could not find the uninstaller in the registry."
     }
 } else {
     Log "ScreenConnect is not installed. Proceeding with installation..."
