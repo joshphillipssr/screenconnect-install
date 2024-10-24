@@ -13,42 +13,44 @@ function Log {
     $logMessage | Out-File -Append -FilePath $logPath
 }
 
-# Check if ScreenConnect service exists
+# Function to find the uninstall string for ScreenConnect
+function Get-ScreenConnectUninstallString {
+    # Check 64-bit registry
+    $uninstallString = Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
+        Where-Object { $_.DisplayName -like "*ScreenConnect*" } |
+        Select-Object -ExpandProperty UninstallString -First 1
+
+    # Check 32-bit registry if not found in 64-bit
+    if (-not $uninstallString) {
+        $uninstallString = Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -like "*ScreenConnect*" } |
+            Select-Object -ExpandProperty UninstallString -First 1
+    }
+
+    return $uninstallString
+}
+
+# Check if ScreenConnect is already installed
 Log "Checking if ScreenConnect is already installed..."
 $service = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
 
 if ($service) {
     Log "ScreenConnect service found. Attempting to uninstall..."
-    
-    # Search for the uninstall string in the registry
-    $uninstallString = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*" `
-        -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*ScreenConnect*" } | 
-        Select-Object -ExpandProperty UninstallString -First 1) -or
-        (Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*" `
-        -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like "*ScreenConnect*" } | 
-        Select-Object -ExpandProperty UninstallString -First 1)
+    # Get the uninstall string
+    $uninstallString = Get-ScreenConnectUninstallString
 
-    if ([string]::IsNullOrEmpty($uninstallString)) {
-        Log "ERROR: Could not find the uninstaller in the registry."
-    } else {
-        Log "Found uninstall string: $uninstallString"
-
-        # Check if the uninstall string needs reformatting
-        if ($uninstallString -match "msiexec\.exe /X(\{.+\})") {
-            # Extract the product code and rebuild the command
-            $productCode = $matches[1]
-            $uninstallString = "/X $productCode /qn /norestart /L*V C:\Temp\uninstall.log"
-            Log "Reformatted uninstall string: $uninstallString"
-        }
-
+    if ($uninstallString) {
+        Log "Found uninstall string: $uninstallString. Running uninstaller..."
         try {
             # Run the uninstaller silently
-            Start-Process msiexec.exe -ArgumentList $uninstallString -Wait -NoNewWindow
+            Start-Process msiexec.exe -ArgumentList "/X $uninstallString /quiet /norestart" -Wait -NoNewWindow
             Log "ScreenConnect uninstalled successfully."
         } catch {
             Log "ERROR: Failed to uninstall ScreenConnect. Exception: $_"
             exit 1
         }
+    } else {
+        Log "ERROR: Could not find the uninstaller in the registry."
     }
 } else {
     Log "ScreenConnect is not installed. Proceeding with installation..."
