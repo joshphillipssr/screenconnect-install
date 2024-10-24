@@ -40,14 +40,20 @@ if ($service) {
     $uninstallString = Get-ScreenConnectUninstallString
 
     if ($uninstallString) {
-        Log "Found uninstall string: $uninstallString. Running uninstaller..."
-        try {
-            # Run the uninstaller silently
-            Start-Process msiexec.exe -ArgumentList "/X $uninstallString /quiet /norestart" -Wait -NoNewWindow
-            Log "ScreenConnect uninstalled successfully."
-        } catch {
-            Log "ERROR: Failed to uninstall ScreenConnect. Exception: $_"
-            exit 1
+        # Extract the GUID from the uninstall string
+        if ($uninstallString -match "msiexec\.exe /X(\{.*\})") {
+            $productCode = $matches[1]
+            Log "Found product code: $productCode. Running uninstaller..."
+            try {
+                # Run the uninstaller silently with the extracted GUID
+                Start-Process msiexec.exe -ArgumentList "/X $productCode /quiet /norestart" -Wait -NoNewWindow
+                Log "ScreenConnect uninstalled successfully."
+            } catch {
+                Log "ERROR: Failed to uninstall ScreenConnect. Exception: $_"
+                exit 1
+            }
+        } else {
+            Log "ERROR: Uninstall string format is not recognized: $uninstallString"
         }
     } else {
         Log "ERROR: Could not find the uninstaller in the registry."
