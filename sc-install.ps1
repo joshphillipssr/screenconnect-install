@@ -29,12 +29,19 @@ if ($service) {
         Select-Object -ExpandProperty UninstallString -First 1)
 
     if ($uninstallString) {
-        # Ensure the format is /X {GUID}
-        $uninstallString = $uninstallString -replace '/X', '/X '
-        Log "Uninstall string found: $uninstallString. Running uninstaller..."
+        Log "Found uninstall string: $uninstallString"
+
+        # Check if the uninstall string needs reformatting
+        if ($uninstallString -match "msiexec\.exe /X(\{.+\})") {
+            # Extract the product code and rebuild the command
+            $productCode = $matches[1]
+            $uninstallString = "/X $productCode /qn /norestart /L*V C:\Temp\uninstall.log"
+            Log "Reformatted uninstall string: $uninstallString"
+        }
+
         try {
             # Run the uninstaller silently
-            Start-Process msiexec.exe -ArgumentList "$uninstallString /quiet /norestart" -Wait -NoNewWindow
+            Start-Process msiexec.exe -ArgumentList $uninstallString -Wait -NoNewWindow
             Log "ScreenConnect uninstalled successfully."
         } catch {
             Log "ERROR: Failed to uninstall ScreenConnect. Exception: $_"
