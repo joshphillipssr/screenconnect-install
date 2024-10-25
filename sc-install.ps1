@@ -1,3 +1,6 @@
+# To execute from backstage and then close session so uninstall will succeed
+# Start-Sleep -Seconds 10
+
 # Variables
 $installerUrl = "https://joshphillipssr.screenconnect.com/Bin/ScreenConnect.ClientSetup.msi?e=Access&y=Guest"
 $tempPath = "$env:TEMP\ScreenConnect.ClientSetup.msi"
