@@ -2,7 +2,7 @@
 # Start-Sleep -Seconds 10
 
 # Variables
-$installerUrl = "https://joshphillipssr.screenconnect.com/Bin/ScreenConnect.ClientSetup.msi?e=Access&y=Guest"
+$installerUrl = "https://joshphillipssr.screenconnect.com/Bin/JPsupport.ClientSetup.msi?e=Access&y=Guest"
 $tempPath = "$env:TEMP\ScreenConnect.ClientSetup.msi"
 $logPath = "C:\Windows\Temp\ScreenConnect_Install_Log.txt"
 $serviceName = "ScreenConnect Client*"
